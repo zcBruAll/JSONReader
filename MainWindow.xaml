@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:JSONReader"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="JSONReader" Height="450" Width="800">
     <Grid>
-        <GroupBox x:Name="grpParentNode" Header="Parent node(s)" Margin="10,0,600,10">
+        <GroupBox x:Name="grpParentNode" Header="Parent node(s)" Margin="10,0,0,10" HorizontalAlignment="Left" Width="190">
             <TreeView x:Name="trvParentNode" BorderThickness="0, 0, 0, 0" ItemsSource="{Binding ParentNodes}" SelectedItemChanged="trvParentNode_SelectedItemChanged">
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Children}">
@@ -17,7 +17,23 @@
             </TreeView>
 
         </GroupBox>
-        <GroupBox x:Name="grpProperties" Header="Properties" Margin="205,0,10,10"/>
+        <GroupBox x:Name="grpProperties" Header="Properties" Margin="205,0,10,10">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <Grid x:Name="grdProperties">
+                    <Grid.Resources>
+                        <Style TargetType="GroupBox">
+                            <Setter Property="BorderBrush" Value="Black"/>
+                            <Setter Property="BorderThickness" Value="1"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="BorderBrush" Value="#A9A9A9"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Resources>
+                </Grid>
+            </ScrollViewer>
+        </GroupBox>
 
     </Grid>
 </Window>

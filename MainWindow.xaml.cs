@@ -2,6 +2,9 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Media;
 
 namespace JSONReader
 {
@@ -62,22 +65,60 @@ namespace JSONReader
         {
             List<(string name, string value)> propertiesToDisplay = [];
 
-            TreeNode foundedNode = GetNode((TreeNode)e.NewValue, Nodes);
+            TreeNode nodeToSearch = (TreeNode)e.NewValue;
+            TreeNode foundedNode = nodeToSearch.GetNode(Nodes);
+            DisplayNodes(foundedNode);
         }
 
-        private TreeNode? GetNode(TreeNode nodeToSearch, ObservableCollection<TreeNode> treeNodes)
+        private void DisplayNodes(TreeNode treeNode)
         {
-            foreach (var node in treeNodes)
+            grdProperties.Children.Clear();
+            grdProperties.RowDefinitions.Clear();
+            grdProperties.ColumnDefinitions.Clear();
+
+            int columnNumber = 2;
+            int currentColumn = 0;
+            int currentRow = 0;
+
+            for (int i = 0; i < columnNumber; i++)
+                grdProperties.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10, GridUnitType.Star) });
+
+            foreach (var node in treeNode.Children)
             {
-                if (node.Id == nodeToSearch.Id)
-                    return node;
+                grdProperties.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-                TreeNode foundNode = GetNode((TreeNode)nodeToSearch, node.Children);
-                if (foundNode != null)
-                    return foundNode;
+                GroupBox groupBox = new GroupBox()
+                {
+                    Header = node.Name,
+                    Margin = new Thickness(5)
+                };
+
+                TextBox textBox = new TextBox()
+                {
+                    BorderThickness = new Thickness(0)
+                };
+
+                textBox.SetBinding(TextBox.TextProperty, new Binding("Value")
+                {
+                    Source = node,
+                    Mode = BindingMode.TwoWay,
+                    UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+                });
+
+                groupBox.Content = textBox;
+
+                Grid.SetRow(groupBox, currentRow);
+                Grid.SetColumn(groupBox, currentColumn);
+                grdProperties.Children.Add(groupBox);
+
+                currentColumn++;
+
+                if (currentColumn >= columnNumber)
+                {
+                    currentColumn = 0;
+                    currentRow++;
+                }
             }
-
-            return null;
         }
     }
 }
