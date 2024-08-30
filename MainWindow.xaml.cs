@@ -1,10 +1,10 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Microsoft.Win32;
+using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Media;
 
 namespace JSONReader
 {
@@ -17,9 +17,16 @@ namespace JSONReader
         {
             InitializeComponent();
 
-            JObject json = InitJSON();
+            DataContext = this;
+        }
+
+        private void InitJSON(string path)
+        {
+            string jsonString = File.ReadAllText(path);
+            JObject json = JObject.Parse(jsonString);
+
             InitNodes(json);
-            
+
             ParentNodes.Clear();
             foreach (TreeNode node in Nodes)
             {
@@ -27,29 +34,21 @@ namespace JSONReader
             }
 
             FilterOnlyParent(ParentNodes);
-
-            DataContext = this;
-        }
-
-        private static JObject InitJSON()
-        {
-            string path = "C:/temp/example.json";
-            string jsonString = File.ReadAllText(path);
-            return JObject.Parse(jsonString);
         }
 
         private void InitNodes(JObject json)
         {
-            var rootNode = TreeNode.FromJToken("Root", json);
+            Nodes.Clear();
+            TreeNode rootNode = TreeNode.FromJToken("Root", json);
 
             Nodes = [rootNode];
         }
 
         private static void FilterOnlyParent(ObservableCollection<TreeNode> treeNodes)
         {
-            var nodesToRemove = new List<TreeNode>();
+            List<TreeNode> nodesToRemove = [];
 
-            foreach (var node in treeNodes)
+            foreach (TreeNode node in treeNodes)
             {
                 if (node.Children.Count == 0)
                     nodesToRemove.Add(node);
@@ -57,17 +56,18 @@ namespace JSONReader
                     FilterOnlyParent(node.Children);
             }
 
-            foreach (var node in nodesToRemove) 
+            foreach (TreeNode node in nodesToRemove) 
                 treeNodes.Remove(node);
         }
 
         private void trvParentNode_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            List<(string name, string value)> propertiesToDisplay = [];
-
             TreeNode nodeToSearch = (TreeNode)e.NewValue;
-            TreeNode foundedNode = nodeToSearch.GetNode(Nodes);
-            DisplayNodes(foundedNode);
+            if (nodeToSearch != null)
+            {
+                TreeNode foundedNode = nodeToSearch.GetNode(Nodes);
+                DisplayNodes(foundedNode);
+            }
         }
 
         private void DisplayNodes(TreeNode treeNode)
@@ -83,17 +83,17 @@ namespace JSONReader
             for (int i = 0; i < columnNumber; i++)
                 grdProperties.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10, GridUnitType.Star) });
 
-            foreach (var node in treeNode.Children)
+            foreach (TreeNode node in treeNode.Children)
             {
                 grdProperties.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-                GroupBox groupBox = new GroupBox()
+                GroupBox groupBox = new()
                 {
                     Header = node.Name,
                     Margin = new Thickness(5)
                 };
 
-                TextBox textBox = new TextBox()
+                TextBox textBox = new()
                 {
                     BorderThickness = new Thickness(0)
                 };
@@ -118,6 +118,36 @@ namespace JSONReader
                     currentColumn = 0;
                     currentRow++;
                 }
+            }
+        }
+
+        private void LoadTreeNode_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*";
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                InitJSON(openFileDialog.FileName);
+            }
+        }
+
+        private void SaveTreeNode_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*";
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                JObject rootObject = new JObject();
+
+                foreach (var node in Nodes[0].Children)
+                {
+                    JToken jsonObject = TreeNode.CreateJTokenFromTreeNode(node);
+                    rootObject[node.Name] = jsonObject;
+                }
+
+                File.WriteAllText(saveFileDialog.FileName, rootObject.ToString());
             }
         }
     }
