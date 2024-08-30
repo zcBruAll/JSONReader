@@ -13,19 +13,31 @@ namespace JSONReader
         public ObservableCollection<TreeNode> ParentNodes { get; set; } = [];
         public ObservableCollection<TreeNode> Nodes { get; set; } = [];
 
+        public static MainWindow MainWindowInstance { get; private set; }
+
         public MainWindow()
         {
             InitializeComponent();
 
+            MainWindowInstance = this;
+
             DataContext = this;
         }
 
-        private void InitJSON(string path)
+        public void InitJSON(string path)
         {
             string jsonString = File.ReadAllText(path);
             JObject json = JObject.Parse(jsonString);
 
             InitNodes(json);
+        }
+
+        public void InitNodes(JObject json)
+        {
+            Nodes.Clear();
+            TreeNode rootNode = TreeNode.FromJToken("Root", json);
+
+            Nodes = [rootNode];
 
             ParentNodes.Clear();
             foreach (TreeNode node in Nodes)
@@ -34,14 +46,6 @@ namespace JSONReader
             }
 
             FilterOnlyParent(ParentNodes);
-        }
-
-        private void InitNodes(JObject json)
-        {
-            Nodes.Clear();
-            TreeNode rootNode = TreeNode.FromJToken("Root", json);
-
-            Nodes = [rootNode];
         }
 
         private static void FilterOnlyParent(ObservableCollection<TreeNode> treeNodes)
@@ -98,12 +102,19 @@ namespace JSONReader
                     BorderThickness = new Thickness(0)
                 };
 
-                textBox.SetBinding(TextBox.TextProperty, new Binding("Value")
+                if (node.Value is null)
                 {
-                    Source = node,
-                    Mode = BindingMode.TwoWay,
-                    UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
-                });
+                    groupBox.Tag = node.Id;
+                    groupBox.MouseDoubleClick += GroupBox_MouseDoubleClick;
+                    textBox.IsReadOnly = true;
+                } else {
+                    textBox.SetBinding(TextBox.TextProperty, new Binding("Value")
+                    {
+                        Source = node,
+                        Mode = BindingMode.TwoWay,
+                        UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
+                    });
+                }
 
                 groupBox.Content = textBox;
 
@@ -121,7 +132,57 @@ namespace JSONReader
             }
         }
 
-        private void LoadTreeNode_Click(object sender, RoutedEventArgs e)
+        private void GroupBox_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e) 
+        {
+            GroupBox groupBox = sender as GroupBox;
+            SetSelectedNode((Guid)groupBox.Tag);
+        }
+
+        private void SetSelectedNode(Guid guid)
+        {
+            foreach (TreeNode node in trvParentNode.ItemsSource)
+            {
+                TreeViewItem item = FindNodeInTreeView(trvParentNode, node, guid);
+                if (item != null)
+                {
+                    item.IsSelected = true;
+                    item.Focus();
+                    break;
+                }
+            }
+        }
+
+        private TreeViewItem FindNodeInTreeView(ItemsControl parent, TreeNode node, Guid guid)
+        {
+            if (node.Id == guid)
+            {
+                return parent.ItemContainerGenerator.ContainerFromItem(node) as TreeViewItem;
+            }
+
+            if (node.Children != null)
+            {
+                TreeViewItem parentItem = parent.ItemContainerGenerator.ContainerFromItem(node) as TreeViewItem;
+                if (parentItem != null && parentItem.Items.Count > 0)
+                {
+                    parentItem.IsExpanded = true;
+                    parentItem.UpdateLayout();
+
+                    foreach (TreeNode child in node.Children)
+                    {
+                        TreeViewItem childItem = FindNodeInTreeView(parentItem, child, guid);
+                        if (childItem != null)
+                        {
+                            return childItem;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+
+        private void LoadTreeNodeFromFile_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
             openFileDialog.Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*";
@@ -149,6 +210,12 @@ namespace JSONReader
 
                 File.WriteAllText(saveFileDialog.FileName, rootObject.ToString());
             }
+        }
+
+        private void LoadTreeNodeFromCopy_Click(object sender, RoutedEventArgs e)
+        {
+            CopyJSONWindow copyJSONWindow = new();
+            copyJSONWindow.ShowDialog();
         }
     }
 }

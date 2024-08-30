@@ -58,13 +58,20 @@
                 x:Name="btnLoadTreeNode"
                 Width="100"
                 Margin="5"
-                Click="LoadTreeNode_Click"
-                Content="Load TreeNode" />
+                Click="LoadTreeNodeFromFile_Click"
+                Content="Load JSON" />
+            <Button
+                x:Name="btnCopyTreeNode"
+                Width="100"
+                Margin="5"
+                Click="LoadTreeNodeFromCopy_Click"
+                Content="Copy JSON" />
             <Button
                 x:Name="btnSaveTreeNode"
                 Width="100"
                 Margin="5"
-                Content="Save TreeNode" Click="SaveTreeNode_Click" />
+                Click="SaveTreeNode_Click"
+                Content="Save JSON" />
         </StackPanel>
     </Grid>
 </Window>
