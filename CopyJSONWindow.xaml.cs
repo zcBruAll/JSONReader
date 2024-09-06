@@ -15,7 +15,7 @@ namespace JSONReader
 
         private void LoadCopyJson_Click(object sender, RoutedEventArgs e)
         {
-            JObject json = JObject.Parse(txtJson.Text);
+            JToken json = JToken.Parse(txtJson.Text);
 
             MainWindow.MainWindowInstance.InitNodes(json);
 

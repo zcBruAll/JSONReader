@@ -27,12 +27,12 @@ namespace JSONReader
         public void InitJSON(string path)
         {
             string jsonString = File.ReadAllText(path);
-            JObject json = JObject.Parse(jsonString);
+            JToken json = JToken.Parse(jsonString);
 
             InitNodes(json);
         }
 
-        public void InitNodes(JObject json)
+        public void InitNodes(JToken json)
         {
             Nodes.Clear();
             TreeNode rootNode = TreeNode.FromJToken("Root", json);
