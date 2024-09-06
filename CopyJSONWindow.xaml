@@ -1,0 +1,33 @@
+﻿<Window
+    x:Class="JSONReader.CopyJSONWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:JSONReader"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="CopyJSONWindow"
+    Width="820"
+    Height="470"
+    mc:Ignorable="d">
+    <Grid>
+        <TextBox
+            x:Name="txtJson"
+            Width="780"
+            Height="389"
+            Margin="10,10,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            AcceptsReturn="True"
+            Background="#FFF1F1F1"
+            FontFamily="Courier New"
+            Text="" />
+        <Button
+            x:Name="btnLoadCopyJson"
+            Width="100"
+            Margin="690,404,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            Click="LoadCopyJson_Click"
+            Content="Load" />
+    </Grid>
+</Window>

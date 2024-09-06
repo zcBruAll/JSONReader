@@ -7,11 +7,11 @@ namespace JSONReader
 {
     public class TreeNode(string name)
     {
-        private string _value;
+        private object? _value;
 
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = name;
-        public string Value 
+        public object? Value 
         {
             get => _value; 
             set
@@ -21,42 +21,53 @@ namespace JSONReader
             }
         }
 
+        public bool IsArray { get; set; } = false;
+
         public ObservableCollection<TreeNode> Children { get; set; } = [];
 
         public static TreeNode FromJToken(string name, JToken token)
         {
-            var node = new TreeNode(name);
+            TreeNode node = new(name);
 
             if (token is JObject obj)
             {
-                foreach (var property in obj.Properties())
+                foreach (JProperty property in obj.Properties())
                 {
-                    var childNode = FromJToken(property.Name, property.Value);
+                    TreeNode childNode = FromJToken(property.Name, property.Value);
                         node.Children.Add(childNode);
                 }
             }
             else if (token is JArray array)
             {
+                node.IsArray = true;
                 for (int i = 0; i < array.Count; i++)
                 {
-                    var childNode = FromJToken($"[{i}]", array[i]);
+                    TreeNode childNode = FromJToken($"[{i}]", array[i]);
                         node.Children.Add(childNode);
                 }
             }
-            else
-                node.Value = token.ToString();
+            else {
+                node.Value = token.Type switch
+                {
+                    JTokenType.Integer => token.ToObject<int>(),
+                    JTokenType.Float => token.ToObject<double>(),
+                    JTokenType.Boolean => token.ToObject<bool>(),
+                    JTokenType.String => token.ToObject<string>(),
+                    _ => token.ToString()
+                };
+            }
 
             return node;
         }
 
         public TreeNode Clone()
         {
-            var newNode = new TreeNode(Name)
+            TreeNode newNode = new TreeNode(Name)
             {
-                Id = this.Id,
-                Value = this.Value
+                Id = Id,
+                Value = Value
             };
-            foreach (var child in Children)
+            foreach (TreeNode child in Children)
             {
                 newNode.Children.Add(child.Clone());
             }
@@ -65,12 +76,12 @@ namespace JSONReader
 
         public TreeNode? GetNode(ObservableCollection<TreeNode> treeNodes)
         {
-            foreach (var node in treeNodes)
+            foreach (TreeNode node in treeNodes)
             {
                 if (node.Id == Id)
                     return node;
 
-                TreeNode foundNode = GetNode(node.Children);
+                TreeNode? foundNode = GetNode(node.Children);
                 if (foundNode != null)
                     return foundNode;
             }
@@ -84,6 +95,38 @@ namespace JSONReader
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        public static JToken CreateJTokenFromTreeNode(TreeNode treeNode)
+        {
+            if (treeNode.Children.Count == 0)
+            {
+                return JToken.FromObject(treeNode.Value);
+            }
+
+            if (treeNode.IsArray)
+            {
+                JArray array = new JArray();
+
+                foreach (var child in treeNode.Children)
+                {
+                    array.Add(CreateJTokenFromTreeNode(child));
+                }
+
+                return array;
+            }
+            else
+            {
+                JObject jsonObject = new JObject();
+
+                foreach (var child in treeNode.Children)
+                {
+                    jsonObject[child.Name] = CreateJTokenFromTreeNode(child);
+                }
+
+                return jsonObject;
+            }
+        }
+
     }
 
 }
